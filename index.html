@@ -301,10 +301,6 @@
     transform:translateY(-2px);
   }
 
-  .typing-input{
-    position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;
-  }
-
   .gauge{
     background:var(--chip-bg); border:2px solid var(--panel-border); border-radius:20px;
     display:flex; flex-direction:column; align-items:center; justify-content:space-between;
@@ -477,7 +473,6 @@
       <button class="btn btn--ghost" id="quit-btn" type="button">やめる</button>
     </div>
 
-    <input class="typing-input" id="typing-input" type="text" inputmode="latin" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="ローマ字にゅうりょく">
   </section>
 
   <!-- RESULT SCREEN -->
@@ -574,7 +569,7 @@
    'timebar-fill','timebar-wrap','stat-time','stat-score',
    'mission-cat','mission-emoji','mission-kana','romaji-row','keyboard',
    'gauge-stage','gauge-fill','gauge-rocket','combo-value',
-   'quit-btn','typing-input',
+   'quit-btn',
    'result-rocket','result-stars','result-msg','result-score','result-chars','result-combo',
    'retry-btn','back-btn'
   ].forEach(function(id){ el[id.replace(/-([a-z])/g,function(m,c){return c.toUpperCase();})] = document.getElementById(id); });
@@ -794,12 +789,14 @@
     if(ch === expected){ handleCorrect(); } else { handleWrong(); }
   }
 
-  el.typingInput.addEventListener('input', function(){
-    var val = el.typingInput.value;
-    el.typingInput.value = '';
-    for(var i=0;i<val.length;i++){
-      processChar(val[i]);
-    }
+  document.addEventListener('keydown', function(e){
+    if(!state.playing) return;
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if(typeof k !== 'string' || k.length !== 1) return;
+    if(!/^[a-zA-Z]$/.test(k)) return;
+    e.preventDefault();
+    processChar(k);
   });
 
   /* ---------- timer ---------- */
@@ -837,16 +834,12 @@
     updateStats();
     showScreen('play');
 
-    el.typingInput.value = '';
-    el.typingInput.focus({preventScroll:true});
-
     if(mode === 'time'){ startTimer(); }
   }
 
   function endGame(){
     state.playing = false;
     if(state.timerId){ clearInterval(state.timerId); state.timerId = null; }
-    el.typingInput.blur();
 
     var key = state.mode === 'time' ? LS_HS_TIME : LS_HS_PRACTICE;
     var prevBest = parseInt(localStorage.getItem(key)||'0',10);
@@ -880,9 +873,5 @@
   el.quitBtn.addEventListener('click', endGame);
   el.retryBtn.addEventListener('click', function(){ startGame(state.mode); });
   el.backBtn.addEventListener('click', function(){ showScreen('start'); });
-
-  el.screenPlay.addEventListener('click', function(){
-    if(state.playing) el.typingInput.focus({preventScroll:true});
-  });
 })();
 </script>
