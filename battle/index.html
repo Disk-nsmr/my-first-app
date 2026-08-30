@@ -1,0 +1,878 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タイピングバトル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Kosugi&family=DotGothic16&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --bg-top:#f6eeff;
+    --bg-bottom:#eef0ff;
+    --ink:#2a1b3d;
+    --ink-soft:#6b5a85;
+    --panel:#ffffff;
+    --panel-border:#dccdf5;
+    --panel-shadow:rgba(60,30,100,0.18);
+    --accent:#ff4d6d;
+    --accent-dark:#d6234a;
+    --accent-ink:#ffffff;
+    --accent2:#5b3df0;
+    --yellow:#ffcb3d;
+    --green:#2fb87e;
+    --track:#efe3ff;
+    --chip-bg:#f7f1ff;
+    --hp-glow: 0 0 0 rgba(0,0,0,0);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg-top:#140a24;
+      --bg-bottom:#1f1240;
+      --ink:#f2e9ff;
+      --ink-soft:#b6a6d9;
+      --panel:#22133d;
+      --panel-border:#4a2f78;
+      --panel-shadow:rgba(0,0,0,0.55);
+      --accent:#ff5d7a;
+      --accent-dark:#ff8aa0;
+      --accent-ink:#1b1030;
+      --accent2:#8f74ff;
+      --yellow:#ffd166;
+      --green:#4fe3a5;
+      --track:#2e1c54;
+      --chip-bg:#2a1a4d;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg-top:#140a24;
+    --bg-bottom:#1f1240;
+    --ink:#f2e9ff;
+    --ink-soft:#b6a6d9;
+    --panel:#22133d;
+    --panel-border:#4a2f78;
+    --panel-shadow:rgba(0,0,0,0.55);
+    --accent:#ff5d7a;
+    --accent-dark:#ff8aa0;
+    --accent-ink:#1b1030;
+    --accent2:#8f74ff;
+    --yellow:#ffd166;
+    --green:#4fe3a5;
+    --track:#2e1c54;
+    --chip-bg:#2a1a4d;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+    color:var(--ink);
+    font-family:'Kosugi','Hiragino Sans',sans-serif;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:clamp(16px,4vw,40px) 16px 48px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  h1,h2,h3{text-wrap:balance; margin:0;}
+
+  .sky-deco{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;}
+  .spark{
+    position:absolute; opacity:.5; font-size:1.4rem; filter:saturate(0.8);
+  }
+  .spark--a{top:10%; left:6%;}
+  .spark--b{top:70%; left:88%;}
+  .spark--c{top:85%; left:10%;}
+  .spark--d{top:18%; left:90%;}
+  @media (prefers-reduced-motion:no-preference){
+    .spark--a{animation:twinkle 3.2s ease-in-out infinite;}
+    .spark--b{animation:twinkle 2.6s ease-in-out infinite .4s;}
+    .spark--c{animation:twinkle 3.8s ease-in-out infinite .8s;}
+    .spark--d{animation:twinkle 2.9s ease-in-out infinite 1.1s;}
+  }
+  @keyframes twinkle{0%,100%{opacity:.15; transform:scale(.9);} 50%{opacity:.6; transform:scale(1.15);}}
+
+  .console{
+    position:relative; z-index:1;
+    width:min(960px,100%);
+    background:var(--panel);
+    border:3px solid var(--panel-border);
+    border-radius:24px;
+    box-shadow:0 20px 45px var(--panel-shadow);
+    overflow:hidden;
+  }
+  .console__header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:18px 24px;
+    border-bottom:3px solid var(--panel-border);
+    background:var(--chip-bg);
+  }
+  .console__title{
+    font-family:'Press Start 2P',cursive;
+    font-size:clamp(.85rem,2.6vw,1.15rem);
+    line-height:1.6;
+    display:flex; align-items:center; gap:10px;
+  }
+  .header-right{display:flex; align-items:center; gap:10px;}
+  .chip{
+    font-family:'DotGothic16',monospace;
+    background:var(--panel);
+    border:2px solid var(--panel-border);
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:.95rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .icon-btn{
+    width:40px; height:40px; border-radius:50%;
+    border:2px solid var(--panel-border);
+    background:var(--panel);
+    font-size:1.1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
+  }
+  .icon-btn:hover{transform:translateY(-1px);}
+  .icon-btn:focus-visible, button:focus-visible{
+    outline:3px solid var(--accent); outline-offset:2px;
+  }
+
+  .screen{display:none; padding:clamp(20px,4vw,36px);}
+  .screen.is-active{display:block;}
+
+  /* ---------- start screen ---------- */
+  .hero{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; margin-bottom:26px;}
+  .hero__emoji{font-size:clamp(2.8rem,9vw,4rem);}
+  @media (prefers-reduced-motion:no-preference){
+    .hero__emoji{animation:bob 2.6s ease-in-out infinite;}
+  }
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg);} 50%{transform:translateY(-10px) rotate(3deg);}}
+  .hero__lead{color:var(--ink-soft); font-size:1.02rem; max-width:46ch;}
+
+  .steps{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:14px; margin:0 0 26px;
+  }
+  .step{
+    background:var(--chip-bg); border:2px solid var(--panel-border); border-radius:16px;
+    padding:14px 16px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .step__num{
+    font-family:'DotGothic16',monospace; font-size:1.3rem; color:var(--accent-dark);
+    flex-shrink:0;
+  }
+  .step p{margin:0; font-size:.92rem; color:var(--ink-soft);}
+
+  .mode-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:16px;
+  }
+  .mode-card{
+    border:3px solid var(--panel-border); border-radius:20px; padding:20px;
+    background:var(--chip-bg);
+    display:flex; flex-direction:column; gap:10px; align-items:flex-start;
+    text-align:left;
+  }
+  .mode-card__emoji{font-size:2rem;}
+  .mode-card h3{font-size:1.1rem; font-family:'Press Start 2P',cursive; line-height:1.5;}
+  .mode-card p{margin:0; color:var(--ink-soft); font-size:.9rem;}
+  .mode-card .chip{align-self:flex-start;}
+
+  .btn{
+    font-family:'Kosugi',sans-serif; font-weight:400;
+    border:none; border-radius:14px; cursor:pointer;
+    padding:12px 22px; font-size:1rem;
+    background:var(--accent); color:var(--accent-ink);
+    box-shadow:0 6px 0 var(--accent-dark);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 var(--accent-dark);}
+  .btn--ghost{
+    background:transparent; color:var(--ink); box-shadow:none;
+    border:2px solid var(--panel-border);
+  }
+  .btn--ghost:active{transform:translateY(1px); box-shadow:none;}
+  .mode-card .btn{align-self:stretch; text-align:center;}
+
+  /* ---------- play screen ---------- */
+  .play-top{
+    display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;
+  }
+  .timebar{
+    flex:1; min-width:160px;
+    height:16px; border-radius:999px; background:var(--track);
+    border:2px solid var(--panel-border); overflow:hidden;
+  }
+  .timebar__fill{
+    height:100%; width:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--green),var(--yellow));
+    transition:width 1s linear;
+  }
+  .stat-row{display:flex; gap:10px; flex-wrap:wrap;}
+
+  .play-body{
+    display:grid; grid-template-columns:1fr 150px; gap:22px;
+  }
+
+  .battle{
+    background:var(--chip-bg); border:2px solid var(--panel-border); border-radius:20px;
+    padding:clamp(18px,4vw,30px); text-align:center;
+  }
+  .battle__wave{
+    font-family:'Press Start 2P',cursive; font-size:.75rem; color:var(--accent-dark);
+    letter-spacing:.04em;
+  }
+  .battle__wave.is-boss{color:var(--accent2);}
+  .battle__cat{font-size:.85rem; color:var(--ink-soft); margin-top:4px;}
+
+  .enemy-hp{
+    width:min(260px,80%); height:16px; margin:14px auto 6px;
+    border-radius:999px; background:var(--track); border:2px solid var(--panel-border);
+    overflow:hidden;
+  }
+  .enemy-hp__fill{
+    height:100%; width:100%; border-radius:999px;
+    background:linear-gradient(90deg,var(--green),var(--yellow));
+    transition:width .25s ease, background .25s ease;
+  }
+  .enemy-hp__fill.low{background:linear-gradient(90deg,var(--accent-dark),var(--accent));}
+
+  .battle__emoji{font-size:clamp(3rem,10vw,4.2rem); display:block; transition:transform .15s ease;}
+  .battle__emoji.hit{animation:hit-flash .25s ease;}
+  @keyframes hit-flash{
+    0%{transform:scale(1);} 40%{transform:scale(.85) translateX(6px);} 100%{transform:scale(1);}
+  }
+  .battle__kana{font-size:clamp(1.6rem,5.5vw,2.3rem); font-weight:700; margin-top:8px;}
+
+  .romaji{
+    display:flex; justify-content:center; flex-wrap:wrap; gap:6px;
+    margin:20px 0 8px; font-family:'DotGothic16',monospace;
+  }
+  .letter{
+    min-width:1.4em; text-align:center;
+    font-size:clamp(1.4rem,4.6vw,2rem);
+    padding:4px 2px; border-bottom:4px solid var(--panel-border);
+    color:var(--ink-soft);
+    transition:color .1s ease, border-color .1s ease;
+  }
+  .letter.done{color:var(--green); border-color:var(--green);}
+  .letter.current{color:var(--ink); border-color:var(--accent);}
+  .letter.wrong{animation:shake .28s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  .hint{color:var(--ink-soft); font-size:.88rem; margin-top:12px;}
+
+  .keyboard{
+    margin-top:20px; display:flex; flex-direction:column; gap:6px; align-items:center;
+  }
+  .kbd-row{display:flex; gap:6px; flex-wrap:wrap; justify-content:center;}
+  .key{
+    width:clamp(24px,6.6vw,36px); height:clamp(24px,6.6vw,36px);
+    display:flex; align-items:center; justify-content:center;
+    border-radius:8px; border:2px solid var(--panel-border);
+    background:var(--panel); color:var(--ink-soft);
+    font-family:'DotGothic16',monospace; font-size:.85rem;
+    transition:background .12s ease, color .12s ease, transform .12s ease;
+  }
+  .key--wide{width:auto; padding:0 10px;}
+  .key.active{
+    background:var(--accent); color:var(--accent-ink); border-color:var(--accent-dark);
+    transform:translateY(-2px);
+  }
+
+  .side{
+    background:var(--chip-bg); border:2px solid var(--panel-border); border-radius:20px;
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+    padding:16px 10px; gap:12px;
+  }
+  .side__label{font-family:'DotGothic16',monospace; font-size:.8rem; color:var(--ink-soft); text-align:center;}
+  .side__label b{display:block; font-family:'Press Start 2P',cursive; font-size:.7rem; color:var(--ink); margin-top:4px; line-height:1.6;}
+  .side__combo{font-family:'DotGothic16',monospace; font-size:.8rem; text-align:center; color:var(--ink-soft);}
+  .side__combo b{display:block; font-size:1.3rem; color:var(--ink);}
+  .side__next{font-size:.72rem; color:var(--ink-soft); text-align:center; line-height:1.5;}
+
+  .quit-row{display:flex; justify-content:center; margin-top:22px;}
+
+  .burst{
+    position:fixed; z-index:5; pointer-events:none; font-size:1.5rem;
+    font-family:'Press Start 2P',cursive; color:var(--accent-dark);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .burst{animation:burst-fly 850ms ease-out forwards;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .burst{animation:burst-fade 650ms ease-out forwards;}
+  }
+  @keyframes burst-fly{
+    0%{transform:translate(0,0) scale(.7); opacity:1;}
+    100%{transform:translate(var(--dx,0),-60px) scale(1.15); opacity:0;}
+  }
+  @keyframes burst-fade{
+    0%{opacity:1;} 100%{opacity:0;}
+  }
+
+  /* ---------- result screen ---------- */
+  .result{text-align:center;}
+  .result__emoji{font-size:clamp(2.8rem,9vw,3.6rem); display:block; margin-bottom:6px;}
+  .result__stars{font-size:clamp(1.5rem,4.6vw,2rem); letter-spacing:.08em; margin:6px 0 14px;}
+  .result__msg{font-family:'Press Start 2P',cursive; font-size:clamp(.85rem,3vw,1.1rem); line-height:1.8; margin-bottom:22px;}
+  .result-stats{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:14px; margin-bottom:26px;
+  }
+  .result-stat{
+    background:var(--chip-bg); border:2px solid var(--panel-border); border-radius:16px;
+    padding:14px;
+  }
+  .result-stat__label{font-size:.82rem; color:var(--ink-soft);}
+  .result-stat__value{
+    font-family:'DotGothic16',monospace; font-size:1.5rem; margin-top:4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .result-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+
+  @media (max-width:640px){
+    .console__header{flex-wrap:wrap; row-gap:8px;}
+    .console__title{font-size:.78rem; white-space:nowrap;}
+    .play-body{grid-template-columns:1fr;}
+    .side{
+      flex-direction:row; flex-wrap:wrap; row-gap:8px;
+      height:auto; width:100%; padding:12px 16px;
+    }
+    .side__label{order:1; text-align:left;}
+    .side__combo{order:2; margin-left:auto;}
+    .side__next{order:3; flex:1 1 100%; text-align:left;}
+  }
+</style>
+
+<div class="sky-deco">
+  <div class="spark spark--a">✦</div>
+  <div class="spark spark--b">✦</div>
+  <div class="spark spark--c">✦</div>
+  <div class="spark spark--d">✦</div>
+</div>
+
+<main class="console">
+  <div class="console__header">
+    <div class="console__title"><span>⚔️</span>タイピングバトル</div>
+    <div class="header-right">
+      <span class="chip" id="highscore-chip">さいこう 0</span>
+      <button class="icon-btn" id="mute-btn" type="button" aria-label="おとの オン・オフ">🔊</button>
+    </div>
+  </div>
+
+  <!-- START SCREEN -->
+  <section class="screen is-active" id="screen-start">
+    <div class="hero">
+      <div class="hero__emoji">👹</div>
+      <h1 class="console__title" style="font-size:clamp(1rem,3.4vw,1.4rem);">ひらがなを ローマ字で うちたおせ!</h1>
+      <p class="hero__lead">つぎつぎに あらわれる モンスターを、ことばを タイピングして たおそう。5たいごとに ボスが とうじょう!</p>
+    </div>
+
+    <div class="steps">
+      <div class="step"><span class="step__num">①</span><p>モードを えらぶ</p></div>
+      <div class="step"><span class="step__num">②</span><p>ひらがなを ローマ字で うつ</p></div>
+      <div class="step"><span class="step__num">③</span><p>モンスターを たおそう!</p></div>
+    </div>
+
+    <div class="mode-grid">
+      <div class="mode-card">
+        <span class="mode-card__emoji">⏱️</span>
+        <h3>タイムアタック</h3>
+        <p>60びょうで なんたい たおせるかな?</p>
+        <span class="chip" id="hs-time">さいこう 0たい</span>
+        <button class="btn" data-mode="time" type="button">スタート</button>
+      </div>
+      <div class="mode-card">
+        <span class="mode-card__emoji">📖</span>
+        <h3>れんしゅうモード</h3>
+        <p>じかんせいげん なし。ゆっくり れんしゅうしよう。</p>
+        <span class="chip" id="hs-practice">さいこう 0たい</span>
+        <button class="btn" data-mode="practice" type="button">スタート</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAY SCREEN -->
+  <section class="screen" id="screen-play">
+    <div class="play-top">
+      <div class="timebar" id="timebar-wrap"><div class="timebar__fill" id="timebar-fill"></div></div>
+      <div class="stat-row">
+        <span class="chip" id="stat-time">⏱️ 60</span>
+        <span class="chip" id="stat-score">⚔️ 0たい</span>
+      </div>
+    </div>
+
+    <div class="play-body">
+      <div class="battle">
+        <div class="battle__wave" id="battle-wave">WAVE 1</div>
+        <div class="battle__cat" id="battle-cat">カテゴリ</div>
+
+        <div class="enemy-hp"><div class="enemy-hp__fill" id="enemy-hp-fill"></div></div>
+        <span class="battle__emoji" id="battle-emoji">👻</span>
+        <div class="battle__kana" id="battle-kana">ことば</div>
+
+        <div class="romaji" id="romaji-row"></div>
+        <div class="hint">パソコンのキーボードで うとう(ー は - キー)</div>
+
+        <div class="keyboard" id="keyboard" aria-hidden="true">
+          <div class="kbd-row"></div>
+          <div class="kbd-row"></div>
+          <div class="kbd-row"></div>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="side__label">たおした<b id="side-wave">1</b></div>
+        <div class="side__combo">れんぞく<b id="combo-value">0</b></div>
+        <div class="side__next" id="side-next">あと 4たいで ボス</div>
+      </div>
+    </div>
+
+    <div class="quit-row">
+      <button class="btn btn--ghost" id="quit-btn" type="button">やめる</button>
+    </div>
+  </section>
+
+  <!-- RESULT SCREEN -->
+  <section class="screen" id="screen-result">
+    <div class="result">
+      <span class="result__emoji" id="result-emoji">🏆</span>
+      <div class="result__stars" id="result-stars">⭐⭐⭐</div>
+      <div class="result__msg" id="result-msg">よくできました!</div>
+
+      <div class="result-stats">
+        <div class="result-stat">
+          <div class="result-stat__label">たおした すう</div>
+          <div class="result-stat__value" id="result-score">0たい</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat__label">うった もじすう</div>
+          <div class="result-stat__value" id="result-chars">0もじ</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat__label">せいかくせい</div>
+          <div class="result-stat__value" id="result-accuracy">100%</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat__label">さいだい れんぞく</div>
+          <div class="result-stat__value" id="result-combo">0</div>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn" id="retry-btn" type="button">もういちど</button>
+        <button class="btn btn--ghost" id="back-btn" type="button">モードせんたくへ</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  var WORDS = [
+    {cat:'ちり', kana:'とうきょう', romaji:'toukyou'},
+    {cat:'ちり', kana:'しんかんせん', romaji:'shinkansen'},
+    {cat:'ちり', kana:'のうぎょう', romaji:'nougyou'},
+    {cat:'ちり', kana:'こうつう', romaji:'koutsuu'},
+    {cat:'ちり', kana:'きこう', romaji:'kikou'},
+    {cat:'ちり', kana:'ぼうえき', romaji:'boueki'},
+    {cat:'かがく', kana:'たいよう', romaji:'taiyou'},
+    {cat:'かがく', kana:'しょくぶつ', romaji:'shokubutsu'},
+    {cat:'かがく', kana:'こんちゅう', romaji:'konchuu'},
+    {cat:'かがく', kana:'じしゃく', romaji:'jishaku'},
+    {cat:'かがく', kana:'ふりこ', romaji:'furiko'},
+    {cat:'スポーツ', kana:'やきゅう', romaji:'yakyuu'},
+    {cat:'スポーツ', kana:'すいえい', romaji:'suiei'},
+    {cat:'スポーツ', kana:'マラソン', romaji:'marason'},
+    {cat:'スポーツ', kana:'たいいく', romaji:'taiiku'},
+    {cat:'スポーツ', kana:'サッカー', romaji:'sakka-'},
+    {cat:'せいかつ', kana:'どりょく', romaji:'doryoku'},
+    {cat:'せいかつ', kana:'きょうりょく', romaji:'kyouryoku'},
+    {cat:'せいかつ', kana:'せきにん', romaji:'sekinin'}
+  ];
+
+  var BOSS_WORDS = [
+    {cat:'よじじゅくご', kana:'いっしょうけんめい', romaji:'isshoukenmei'},
+    {cat:'ことわざ', kana:'いちごいちえ', romaji:'ichigoichie'},
+    {cat:'よじじゅくご', kana:'じゅうにんといろ', romaji:'juunintoiro'},
+    {cat:'テクノロジー', kana:'コンピューター', romaji:'konpyu-ta-'},
+    {cat:'テクノロジー', kana:'インターネット', romaji:'inta-netto'},
+    {cat:'テクノロジー', kana:'プログラミング', romaji:'puroguramingu'},
+    {cat:'テクノロジー', kana:'タブレット', romaji:'taburetto'},
+    {cat:'テクノロジー', kana:'キーボード', romaji:'ki-bo-do'},
+    {cat:'スポーツ', kana:'バレーボール', romaji:'bare-bo-ru'}
+  ];
+
+  var NORMAL_ENEMIES = ['👻','🎃','🦇','🕷️','🐍','🦟','🧟'];
+  var BOSS_ENEMIES = ['👹','👺','🐉','🦂','🐙','🦑','👑'];
+
+  var KEY_ROWS = [
+    ['q','w','e','r','t','y','u','i','o','p'],
+    ['a','s','d','f','g','h','j','k','l'],
+    ['z','x','c','v','b','n','m']
+  ];
+
+  var LS_MUTE = 'typingBattle.muted';
+  var LS_HS_TIME = 'typingBattle.highscore.time';
+  var LS_HS_PRACTICE = 'typingBattle.highscore.practice';
+  var BOSS_EVERY = 5;
+  var TIME_LIMIT = 60;
+
+  var el = {};
+  ['highscore-chip','hs-time','hs-practice','mute-btn',
+   'screen-start','screen-play','screen-result',
+   'timebar-fill','timebar-wrap','stat-time','stat-score',
+   'battle-wave','battle-cat','battle-emoji','battle-kana',
+   'enemy-hp-fill','romaji-row','keyboard',
+   'side-wave','combo-value','side-next',
+   'quit-btn',
+   'result-emoji','result-stars','result-msg','result-score','result-chars','result-accuracy','result-combo',
+   'retry-btn','back-btn'
+  ].forEach(function(id){ el[id.replace(/-([a-z])/g,function(m,c){return c.toUpperCase();})] = document.getElementById(id); });
+
+  var state = {
+    mode:null,
+    normalQueue:[], normalIndex:0,
+    bossQueue:[], bossIndex:0,
+    current:null,
+    isBoss:false,
+    enemyEmoji:'👻',
+    enemyNumber:0,
+    typedIndex:0,
+    score:0,
+    charsCorrect:0,
+    mistakes:0,
+    combo:0,
+    bestCombo:0,
+    timeLeft:TIME_LIMIT,
+    timerId:null,
+    playing:false,
+    muted: localStorage.getItem(LS_MUTE) === '1'
+  };
+
+  var keyEls = {};
+
+  function buildKeyboard(){
+    KEY_ROWS.forEach(function(row, i){
+      var rowEl = el.keyboard.children[i];
+      row.forEach(function(k){
+        var span = document.createElement('span');
+        span.className = 'key';
+        span.textContent = k;
+        rowEl.appendChild(span);
+        keyEls[k] = span;
+      });
+    });
+    var dash = document.createElement('span');
+    dash.className = 'key key--wide';
+    dash.textContent = 'ー';
+    el.keyboard.children[0].appendChild(dash);
+    keyEls['-'] = dash;
+  }
+  buildKeyboard();
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function updateMuteBtn(){
+    el.muteBtn.textContent = state.muted ? '🔇' : '🔊';
+    el.muteBtn.setAttribute('aria-label', state.muted ? 'おとを つける' : 'おとを けす');
+  }
+  updateMuteBtn();
+
+  el.muteBtn.addEventListener('click', function(){
+    state.muted = !state.muted;
+    localStorage.setItem(LS_MUTE, state.muted ? '1' : '0');
+    updateMuteBtn();
+  });
+
+  /* ---------- audio ---------- */
+  var audioCtx = null;
+  function ctx(){
+    if(!audioCtx){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+  function tone(freq, dur, type, gainVal, delay){
+    if(state.muted) return;
+    var c = ctx();
+    if(!c) return;
+    var t0 = c.currentTime + (delay||0);
+    var osc = c.createOscillator();
+    var gain = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(gainVal||0.15, t0+0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t0);
+    osc.stop(t0+dur+0.02);
+  }
+  function playHit(){ tone(660,0.07,'square',0.10); }
+  function playWrong(){ tone(150,0.12,'sawtooth',0.09); }
+  function playDefeat(){
+    tone(520,0.09,'square',0.13,0);
+    tone(780,0.09,'square',0.13,0.08);
+    tone(1040,0.14,'square',0.14,0.16);
+  }
+  function playBossDefeat(){
+    [440,660,880,1108,1320].forEach(function(f,i){ tone(f,0.16,'square',0.14,i*0.1); });
+  }
+  function playVictory(){
+    [523,659,784,1046,1318].forEach(function(f,i){ tone(f,0.18,'triangle',0.15,i*0.11); });
+  }
+
+  /* ---------- screens ---------- */
+  function showScreen(name){
+    [el.screenStart, el.screenPlay, el.screenResult].forEach(function(s){ s.classList.remove('is-active'); });
+    ({start:el.screenStart, play:el.screenPlay, result:el.screenResult})[name].classList.add('is-active');
+  }
+
+  function refreshHighscoreChips(){
+    var hsTime = parseInt(localStorage.getItem(LS_HS_TIME)||'0',10);
+    var hsPractice = parseInt(localStorage.getItem(LS_HS_PRACTICE)||'0',10);
+    el.hsTime.textContent = 'さいこう ' + hsTime + 'たい';
+    el.hsPractice.textContent = 'さいこう ' + hsPractice + 'たい';
+    el.highscoreChip.textContent = 'さいこう ' + Math.max(hsTime,hsPractice);
+  }
+  refreshHighscoreChips();
+
+  /* ---------- enemy flow ---------- */
+  function nextFromQueue(pool, queueName, indexName){
+    if(state[indexName] >= state[queueName].length){
+      state[queueName] = shuffle(pool);
+      state[indexName] = 0;
+    }
+    return state[queueName][state[indexName]++];
+  }
+
+  function spawnEnemy(){
+    state.enemyNumber++;
+    state.isBoss = (state.enemyNumber % BOSS_EVERY === 0);
+    state.current = state.isBoss
+      ? nextFromQueue(BOSS_WORDS, 'bossQueue', 'bossIndex')
+      : nextFromQueue(WORDS, 'normalQueue', 'normalIndex');
+    state.enemyEmoji = state.isBoss
+      ? BOSS_ENEMIES[Math.floor(Math.random()*BOSS_ENEMIES.length)]
+      : NORMAL_ENEMIES[Math.floor(Math.random()*NORMAL_ENEMIES.length)];
+    state.typedIndex = 0;
+  }
+
+  function renderEnemy(){
+    var w = state.current;
+    el.battleWave.textContent = state.isBoss ? 'ボス とうじょう!' : 'WAVE ' + state.enemyNumber;
+    el.battleWave.classList.toggle('is-boss', state.isBoss);
+    el.battleCat.textContent = w.cat;
+    el.battleEmoji.textContent = state.enemyEmoji;
+    el.battleKana.textContent = w.kana;
+    el.enemyHpFill.style.width = '100%';
+    el.enemyHpFill.classList.remove('low');
+
+    el.romajiRow.innerHTML = '';
+    w.romaji.split('').forEach(function(ch, i){
+      var span = document.createElement('span');
+      span.className = 'letter' + (i===0 ? ' current' : '');
+      span.textContent = ch;
+      el.romajiRow.appendChild(span);
+    });
+    updateKeyHighlight();
+
+    var untilBoss = BOSS_EVERY - (state.enemyNumber % BOSS_EVERY);
+    el.sideNext.textContent = state.isBoss ? 'いまが ボスせん!' : ('あと ' + untilBoss + 'たいで ボス');
+    el.sideWave.textContent = state.score;
+  }
+
+  function updateKeyHighlight(){
+    Object.keys(keyEls).forEach(function(k){ keyEls[k].classList.remove('active'); });
+    var expected = state.current.romaji[state.typedIndex];
+    if(expected && keyEls[expected]) keyEls[expected].classList.add('active');
+  }
+
+  function updateStats(){
+    el.statScore.textContent = '⚔️ ' + state.score + 'たい';
+    el.comboValue.textContent = state.combo;
+  }
+
+  function burst(text, color){
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var rect = el.battleEmoji.getBoundingClientRect();
+    var count = reduce ? 1 : 3;
+    for(var i=0;i<count;i++){
+      var span = document.createElement('span');
+      span.className = 'burst';
+      span.textContent = text;
+      if(color) span.style.color = color;
+      span.style.left = (rect.left + rect.width/2 + (Math.random()*40-20)) + 'px';
+      span.style.top = (rect.top + rect.height/2) + 'px';
+      span.style.setProperty('--dx', (Math.random()*80-40) + 'px');
+      document.body.appendChild(span);
+      (function(node){ setTimeout(function(){ node.remove(); }, 900); })(span);
+    }
+  }
+
+  function letterEls(){ return el.romajiRow.querySelectorAll('.letter'); }
+
+  function handleCorrect(){
+    var letters = letterEls();
+    letters[state.typedIndex].classList.remove('current');
+    letters[state.typedIndex].classList.add('done');
+    state.typedIndex++;
+    state.charsCorrect++;
+    playHit();
+
+    el.battleEmoji.classList.remove('hit');
+    void el.battleEmoji.offsetWidth;
+    el.battleEmoji.classList.add('hit');
+
+    var remainPct = Math.max(0, 100 - Math.round((state.typedIndex / state.current.romaji.length) * 100));
+    el.enemyHpFill.style.width = remainPct + '%';
+    el.enemyHpFill.classList.toggle('low', remainPct <= 30);
+
+    if(state.typedIndex < state.current.romaji.length){
+      letters[state.typedIndex].classList.add('current');
+      updateKeyHighlight();
+    } else {
+      state.score++;
+      state.combo++;
+      if(state.combo > state.bestCombo) state.bestCombo = state.combo;
+      if(state.isBoss){ playBossDefeat(); burst('ボスげきは!','var(--accent2)'); }
+      else { playDefeat(); burst('たおした!'); }
+      updateStats();
+      spawnEnemy();
+      renderEnemy();
+    }
+  }
+
+  function handleWrong(){
+    var letters = letterEls();
+    var cur = letters[state.typedIndex];
+    cur.classList.remove('wrong');
+    void cur.offsetWidth;
+    cur.classList.add('wrong');
+    state.combo = 0;
+    state.mistakes++;
+    updateStats();
+    playWrong();
+  }
+
+  function processChar(ch){
+    if(!state.playing) return;
+    ch = ch.toLowerCase();
+    if(!/^[a-z-]$/.test(ch)) return;
+    var expected = state.current.romaji[state.typedIndex];
+    if(ch === expected){ handleCorrect(); } else { handleWrong(); }
+  }
+
+  document.addEventListener('keydown', function(e){
+    if(!state.playing) return;
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if(typeof k !== 'string' || k.length !== 1) return;
+    if(!/^[a-zA-Z-]$/.test(k)) return;
+    e.preventDefault();
+    processChar(k);
+  });
+
+  /* ---------- timer ---------- */
+  function startTimer(){
+    state.timeLeft = TIME_LIMIT;
+    el.statTime.textContent = '⏱️ ' + state.timeLeft;
+    el.timebarFill.style.width = '100%';
+    state.timerId = setInterval(function(){
+      state.timeLeft--;
+      el.statTime.textContent = '⏱️ ' + Math.max(state.timeLeft,0);
+      el.timebarFill.style.width = Math.max(state.timeLeft/TIME_LIMIT*100,0) + '%';
+      if(state.timeLeft <= 0){
+        endGame();
+      }
+    }, 1000);
+  }
+
+  /* ---------- game lifecycle ---------- */
+  function startGame(mode){
+    state.mode = mode;
+    state.score = 0;
+    state.charsCorrect = 0;
+    state.mistakes = 0;
+    state.combo = 0;
+    state.bestCombo = 0;
+    state.enemyNumber = 0;
+    state.normalQueue = shuffle(WORDS);
+    state.normalIndex = 0;
+    state.bossQueue = shuffle(BOSS_WORDS);
+    state.bossIndex = 0;
+    state.playing = true;
+    state.startedAt = Date.now();
+
+    el.timebarWrap.style.display = mode === 'time' ? 'block' : 'none';
+    el.statTime.style.display = mode === 'time' ? 'inline-block' : 'none';
+
+    spawnEnemy();
+    renderEnemy();
+    updateStats();
+    showScreen('play');
+
+    if(mode === 'time'){ startTimer(); }
+  }
+
+  function endGame(){
+    state.playing = false;
+    if(state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+
+    var key = state.mode === 'time' ? LS_HS_TIME : LS_HS_PRACTICE;
+    var prevBest = parseInt(localStorage.getItem(key)||'0',10);
+    if(state.score > prevBest){ localStorage.setItem(key, String(state.score)); }
+    refreshHighscoreChips();
+
+    var totalAttempts = state.charsCorrect + state.mistakes;
+    var accuracy = totalAttempts > 0 ? Math.round((state.charsCorrect/totalAttempts)*100) : 100;
+
+    var emoji, stars, msg;
+    if(state.score === 0){
+      emoji='🏳️'; stars='☆☆☆'; msg='つぎは できるよ! もういちど ちょうせん';
+    } else if(state.score < 8){
+      emoji='🗡️'; stars='⭐☆☆'; msg='いいちょうし! そのまま すすもう';
+    } else if(state.score < 18){
+      emoji='🛡️'; stars='⭐⭐☆'; msg='よくたたかった! たいしたうでまえ';
+    } else {
+      emoji='🏆'; stars='⭐⭐⭐'; msg='かんぺき! チャンピオンきゅう!';
+      playVictory();
+    }
+    el.resultEmoji.textContent = emoji;
+    el.resultStars.textContent = stars;
+    el.resultMsg.textContent = msg;
+    el.resultScore.textContent = state.score + 'たい';
+    el.resultChars.textContent = state.charsCorrect + 'もじ';
+    el.resultAccuracy.textContent = accuracy + '%';
+    el.resultCombo.textContent = state.bestCombo;
+
+    showScreen('result');
+  }
+
+  document.querySelectorAll('.mode-card .btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ startGame(btn.getAttribute('data-mode')); });
+  });
+  el.quitBtn.addEventListener('click', endGame);
+  el.retryBtn.addEventListener('click', function(){ startGame(state.mode); });
+  el.backBtn.addEventListener('click', function(){ showScreen('start'); });
+})();
+</script>
