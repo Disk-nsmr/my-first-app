@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>出来高管理デモ</title>
+<style>
+:root{--bg:#0e1522;--panel:#151e30;--line:#24304a;--text:#e8edf6;--sub:#8a96ad;--accent:#f5a623;--blue:#3b8cf5;--green:#1fa971;--red:#ff5a5f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{font-weight:800;color:var(--accent);letter-spacing:.05em}
+nav{display:flex;gap:6px;flex:1}
+nav button{background:none;border:1px solid var(--line);color:var(--sub);padding:8px 14px;border-radius:8px;font-size:14px;cursor:pointer}
+nav button.on{background:var(--accent);color:#1b1200;border-color:var(--accent);font-weight:700}
+.reset{background:none;border:none;color:var(--sub);cursor:pointer;font-size:12px}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 60px}
+section{display:none}section.on{display:block}
+.tablet{max-width:560px;margin:0 auto;background:#fff;color:#1c2333;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px #0008}
+.tbar{background:#1c2740;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;font-size:13px}
+.tbody{padding:18px}
+.qr{border:2px dashed #b9c1d1;border-radius:12px;padding:24px;text-align:center}
+.qr .box{width:150px;height:150px;margin:12px auto;background:
+ conic-gradient(#222 25%,#fff 0 50%,#222 0 75%,#fff 0) 0 0/30px 30px;border-radius:8px;position:relative;overflow:hidden}
+.qr .box::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--accent);animation:scan 1.6s infinite alternate}
+@keyframes scan{from{top:0}to{top:100%}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{background:#f3f5f9;border-radius:8px;padding:8px 12px}
+.f small{display:block;color:#7a8499;font-size:11px}.f b{font-size:16px}
+.count{text-align:center;margin:14px 0 4px}
+.count small{color:#7a8499;font-size:12px}
+.count .n{font-size:72px;font-weight:800;line-height:1.1}
+.count .n.run{color:var(--green)}
+.btn{width:100%;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;background:var(--accent);color:#1b1200;margin-top:8px}
+.btn.alt{background:#e4e8f0;color:#1c2333}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.note{text-align:center;color:var(--sub);font-size:13px;margin-top:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi,.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi small{color:var(--sub);font-size:12px}.kpi b{display:block;font-size:30px;margin-top:4px}
+.kpi b i{font-size:14px;font-style:normal;color:var(--sub)}
+.cols{display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-top:10px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+h3{margin:0 0 12px;font-size:14px;color:var(--sub);font-weight:600}
+.row{display:grid;grid-template-columns:44px 1fr 90px;gap:10px;align-items:center;margin:12px 0;font-size:14px}
+.bar{height:12px;background:#0b111c;border-radius:6px;position:relative;overflow:visible}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:6px;transition:width .4s}
+.bar i.risk{background:var(--red)}
+.bar u{position:absolute;top:-4px;width:2px;height:20px;background:var(--sub)}
+.row span{text-align:right;color:var(--sub);font-size:12px}
+.feed div{display:flex;justify-content:space-between;background:#0f1726;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:13px}
+.feed em{color:var(--green);font-style:normal}
+.feed small{color:var(--sub)}
+.mail{background:#fff;color:#1c2333;border-radius:12px;padding:20px;font-size:14px}
+.mail h4{margin:0 0 4px}.mail table{width:100%;border-collapse:collapse;margin-top:12px}
+.mail th,.mail td{padding:6px 8px;border-bottom:1px solid #e3e7ef;text-align:right}.mail th:first-child,.mail td:first-child{text-align:left}
+.mkpi{display:flex;gap:10px;margin-top:12px}.mkpi div{flex:1;border:1px solid #e3e7ef;border-radius:8px;padding:8px}.mkpi small{color:#7a8499;font-size:11px;display:block}.mkpi b{font-size:22px}
+.eff{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.eff .card{text-align:center}.eff s{color:var(--sub);font-size:12px}.eff b{display:block;font-size:34px;color:var(--accent)}
+.sched{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.status{color:var(--green);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">KYTtech</span>
+  <nav>
+    <button data-t="input" class="on">① 現場入力</button>
+    <button data-t="dash">② リアルタイム集計</button>
+    <button data-t="report">③ 週次レポート</button>
+  </nav>
+  <button class="reset" id="reset">デモをリセット</button>
+</header>
+<main>
+<section id="input" class="on">
+  <div class="tablet">
+    <div class="tbar"><span>出来高入力</span><span id="tinfo">PB-03 / 曲げ工程</span></div>
+    <div class="tbody">
+      <div id="scanView" class="qr">
+        <div><b>作業票のQRコードを読み取ってください</b></div>
+        <div class="box"></div>
+        <button class="btn" id="scan">QRを読み取る（デモ）</button>
+      </div>
+      <div id="workView" style="display:none">
+        <div class="grid">
+          <div class="f"><small>受注No.</small><b id="fOrder"></b></div>
+          <div class="f"><small>品番</small><b id="fItem"></b></div>
+          <div class="f"><small>工程</small><b id="fProc"></b></div>
+          <div class="f"><small>作業者 / 計画数</small><b id="fWorker"></b></div>
+        </div>
+        <div class="count"><small>完了数（設備カウンタ連動）</small><div class="n" id="cnt">0</div></div>
+        <button class="btn alt" id="run">設備を稼働（カウンタ自動加算）</button>
+        <button class="btn" id="done">完了を登録</button>
+      </div>
+    </div>
+  </div>
+  <p class="note">QRで受注・品番・工程を自動セット。完了数は設備カウンタから自動取得し、手入力は不要です。</p>
+</section>
+
+<section id="dash">
+  <div class="kpis">
+    <div class="kpi"><small>本日の出来高（個）</small><b id="kTotal">0</b></div>
+    <div class="kpi"><small>計画達成率</small><b><span id="kRate">0</span><i>%</i></b></div>
+    <div class="kpi"><small>稼働中の設備</small><b><span id="kMach">0</span><i> / 12台</i></b></div>
+    <div class="kpi"><small>遅延リスク</small><b style="color:var(--red)"><span id="kRisk">0</span><i> 件</i></b></div>
+  </div>
+  <div class="cols">
+    <div class="card"><h3>工程別 出来高（実績 / 計画）</h3><div id="bars"></div></div>
+    <div class="card"><h3>入力フィード（自動）</h3><div class="feed" id="feed"></div></div>
+  </div>
+  <p class="note">現場タブレットの入力が、その場でこの画面に反映されます（別タブで開いても同期）。</p>
+</section>
+
+<section id="report">
+  <div class="sched">
+    <div class="card"><small style="color:var(--sub)">自動送信スケジュール</small><br><b style="font-size:20px">毎週月曜 8:00</b></div>
+    <div class="card"><small style="color:var(--sub)">送信先</small><br><b>工場長 / 生産管理課（3名）</b></div>
+    <button class="btn" style="width:auto;margin:0;padding:12px 20px" id="send">今すぐ送信（デモ）</button>
+    <span class="status" id="sent"></span>
+  </div>
+  <div class="mail" id="mail"></div>
+  <h3 style="margin-top:24px">導入効果（想定）</h3>
+  <div class="eff">
+    <div class="card"><small style="color:var(--sub)">日報の転記作業</small><br><s>1日 約60分</s><b>0分</b></div>
+    <div class="card"><small style="color:var(--sub)">進捗の把握</small><br><s>翌日</s><b>即時</b></div>
+    <div class="card"><small style="color:var(--sub)">週次報告の作成</small><br><s>毎週 約2時間</s><b>7分</b></div>
+  </div>
+  <p class="note">※数値は一般的な導入イメージです。実際は現状ヒアリング後に試算します。</p>
+</section>
+</main>
+<script>
+const PROCS=["切断","曲げ","溶接","塗装","検査"];
+const PLAN={切断:560,曲げ:480,溶接:320,塗装:320,検査:300};
+const WEEK={切断:[2180,2240],曲げ:[1860,1920],溶接:[1640,1700]};
+const SEED={actual:{切断:511,曲げ:403,溶接:256,塗装:147,検査:118},feed:[
+ {p:"検査",who:"QC-1 鈴木",item:"BRK-A320",n:118,t:"09:12"},
+ {p:"溶接",who:"WD-02 佐藤",item:"FRM-880",n:24,t:"09:30"},
+ {p:"切断",who:"LS-01 自動",item:"SP-1150",n:60,t:"09:41"}],mach:10};
+const KEY="dekidaka-v1";
+const $=s=>document.querySelector(s);
+let S=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||clone(SEED)}catch(e){return clone(SEED)}}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+addEventListener("storage",e=>{if(e.key===KEY){S=load();render()}});
+
+// tabs
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+ document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id===b.dataset.t));
+ render();
+});
+
+// input
+const TICKETS=[
+ {order:"24-1187",item:"BRK-A320 ブラケット",proc:"曲げ",worker:"山田",plan:120,code:"BRK-A320"},
+ {order:"24-1190",item:"FRM-880 フレーム",proc:"溶接",worker:"佐藤",plan:80,code:"FRM-880"},
+ {order:"24-1195",item:"SP-1150 サポート",proc:"切断",worker:"田中",plan:150,code:"SP-1150"}];
+let cur=null,count=0,timer=null;
+$("#scan").onclick=()=>{
+ cur=TICKETS[Math.floor(Math.random()*TICKETS.length)];count=0;
+ $("#fOrder").textContent=cur.order;$("#fItem").textContent=cur.item;
+ $("#fProc").textContent=cur.proc;$("#fWorker").textContent=cur.worker+" / "+cur.plan;
+ $("#tinfo").textContent="受注 "+cur.order+" / "+cur.proc+"工程";
+ $("#scanView").style.display="none";$("#workView").style.display="block";
+ setCount();$("#done").disabled=true;
+};
+function setCount(){const n=$("#cnt");n.textContent=count;n.classList.toggle("run",count>0)}
+$("#run").onclick=()=>{
+ if(timer){clearInterval(timer);timer=null;$("#run").textContent="設備を稼働（カウンタ自動加算）";return}
+ $("#run").textContent="停止";
+ timer=setInterval(()=>{count=Math.min(cur.plan,count+Math.ceil(cur.plan/40));setCount();$("#done").disabled=count===0;
+  if(count>=cur.plan){clearInterval(timer);timer=null;$("#run").textContent="設備を稼働（カウンタ自動加算）"}},120);
+};
+$("#done").onclick=()=>{
+ if(timer){clearInterval(timer);timer=null}
+ S.actual[cur.proc]+=count;
+ const d=new Date();
+ S.feed.unshift({p:cur.proc,who:cur.worker,item:cur.code,n:count,t:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")});
+ S.feed=S.feed.slice(0,6);S.mach=Math.min(12,S.mach);save();
+ $("#workView").style.display="none";$("#scanView").style.display="block";
+ $("#run").textContent="設備を稼働（カウンタ自動加算）";
+ $("#tinfo").textContent="PB-03 / 曲げ工程";render();
+ alert(cur.proc+"工程に +"+count+"個を登録しました。集計画面に即時反映されます。");
+};
+
+function render(){
+ const total=PROCS.reduce((a,p)=>a+S.actual[p],0),plan=PROCS.reduce((a,p)=>a+PLAN[p],0);
+ $("#kTotal").textContent=total.toLocaleString();
+ $("#kRate").textContent=Math.round(total/plan*100);
+ $("#kMach").textContent=S.mach;
+ const risk=PROCS.filter(p=>S.actual[p]/PLAN[p]<.5);
+ $("#kRisk").textContent=risk.length;
+ $("#bars").innerHTML=PROCS.map(p=>{const r=S.actual[p]/PLAN[p];
+  return `<div class="row"><b>${p}</b><div class="bar"><i class="${r<.5?'risk':''}" style="width:${Math.min(100,r*100)}%"></i><u style="left:60%"></u></div><span>${S.actual[p]} / ${PLAN[p]}</span></div>`}).join("");
+ $("#feed").innerHTML=S.feed.map(f=>`<div><span>${f.p} ${f.who}<br><small>${f.item} ${f.t}</small></span><em>+${f.n}</em></div>`).join("");
+ renderMail();
+}
+function renderMail(){
+ const rows=Object.entries(WEEK).map(([p,[a,pl]])=>`<tr><td>${p}</td><td>${a.toLocaleString()}</td><td>${pl.toLocaleString()}</td><td>${Math.round(a/pl*100)}%</td></tr>`).join("");
+ $("#mail").innerHTML=`<h4>【週次出来高レポート】10/19（月）〜10/25（日）</h4>
+ <small style="color:#7a8499">送信元：工場長、生産管理システム（自動送信）</small>
+ <p>先週の出来高を自動集計しました。</p>
+ <div class="mkpi"><div><small>週の出来高</small><b>8,408 個</b></div><div><small>計画達成率</small><b>95%</b></div><div><small>前週比</small><b style="color:#1fa971">+6%</b></div></div>
+ <table><tr><th>工程</th><th>実績</th><th>計画</th><th>達成率</th></tr>${rows}</table>`;
+}
+$("#send").onclick=()=>{$("#sent").textContent="● 送信完了 ✓ "+new Date().toLocaleString("ja-JP")};
+$("#reset").onclick=()=>{S=clone(SEED);save();render()};
+render();
+</script>
+</body>
+</html>
